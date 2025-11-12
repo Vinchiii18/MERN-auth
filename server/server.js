@@ -1,55 +1,63 @@
-import express from 'express';
+import express from "express";
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import mongoose from 'mongoose';
 import 'dotenv/config';
-import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import fs from 'fs';
 
 import authRouter from './routes/authRoutes.js';
 import userRouter from './routes/userRoutes.js';
 import connectDB from './config/mongodb.js';
+import rateLimiter from './middleware/rateLimiter.js'; // optional, if you have
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const port = process.env.PORT || 4000;
+const PORT = process.env.PORT || 4000;
 
-// Connect to MongoDB
-connectDB();
+// Connect to MongoDB first
+connectDB().then(() => {
+    console.log("Database Connected");
 
-// CORS
-const allowedOrigins = [
-  'http://localhost:5173',        // local dev
-  process.env.RENDER_EXTERNAL_URL  // Render domain automatically
-].filter(Boolean);
+    // Middleware
+    if (process.env.NODE_ENV !== 'production') {
+        console.log("Development Mode: CORS enabled for http://localhost:5173");
+        app.use(cors({
+            origin: "http://localhost:5173",
+            credentials: true
+        }));
+    }
 
-app.use(cors({ origin: allowedOrigins, credentials: true }));
-app.use(express.json());
-app.use(cookieParser());
+    app.use(express.json());
+    app.use(cookieParser());
+    if (rateLimiter) app.use(rateLimiter); // optional
 
-// API routes
-app.use('/api/auth', authRouter);
-app.use('/api/user', userRouter);
+    // Log requests (optional)
+    app.use((req, res, next) => {
+        console.log(`req method: ${req.method}, req url: ${req.url}`);
+        next();
+    });
 
-// Serve React frontend if build exists
-const clientDistPath = path.join(__dirname, '../client/dist');
-if (fs.existsSync(clientDistPath)) {
-  app.use(express.static(clientDistPath));
+    // API Routes
+    app.use("/api/auth", authRouter);
+    app.use("/api/user", userRouter);
 
-  // Catch-all route for React (exclude /api paths)
-  app.get(/^\/(?!api).*/, (req, res) => {
-    res.sendFile(path.join(clientDistPath, 'index.html'));
-  });
-} else {
-  // Dev fallback
-  app.get('/', (req, res) => res.send('API Working!'));
-}
+    // Serve React frontend in production
+    if (process.env.NODE_ENV === 'production') {
+        app.use(express.static(path.join(__dirname, '../client/dist')));
+        app.get('*', (req, res) => {
+            res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+        });
+    } else {
+        // Simple API check in development
+        app.get('/', (req, res) => res.send('API Working!'));
+    }
 
-// Start server
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-  console.log('Allowed Origins:', allowedOrigins.join(', '));
+    // Start server
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+
 });
