@@ -5,6 +5,7 @@ import 'dotenv/config';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 import authRouter from './routes/authRoutes.js';
 import userRouter from './routes/userRoutes.js';
@@ -19,17 +20,13 @@ const port = process.env.PORT || 4000;
 // Connect to MongoDB
 connectDB();
 
-// Detect if in production
-const isProduction = process.env.NODE_ENV === 'production';
-
-// CORS
-const allowedOrigins = isProduction
-  ? ['https://mern-auth-fbtb.onrender.com'] // Replace with your Render domain
-  : ['http://localhost:5173'];
+// Determine allowed origins dynamically
+const allowedOrigins = [
+  'http://localhost:5173',          // local dev
+  process.env.RENDER_EXTERNAL_URL    // Render assigned domain (auto)
+].filter(Boolean); // remove undefined if not on Render
 
 app.use(cors({ origin: allowedOrigins, credentials: true }));
-
-// Middleware
 app.use(express.json());
 app.use(cookieParser());
 
@@ -37,21 +34,22 @@ app.use(cookieParser());
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 
-// Serve React Frontend in Production
-if (isProduction) {
-  // Serve static files
-  app.use(express.static(path.join(__dirname, '../client/dist')));
+// Serve React frontend if build exists
+const clientDistPath = path.join(__dirname, '../client/dist');
+if (fs.existsSync(clientDistPath)) {
+  app.use(express.static(clientDistPath));
 
-  // Serve React for all other routes
-  app.all('/*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+  // Catch all non-API routes and send React index.html
+  app.all('*', (req, res) => {
+    res.sendFile(path.join(clientDistPath, 'index.html'));
   });
 } else {
-  // Local dev: simple API check
+  // Local dev fallback if dist not built
   app.get('/', (req, res) => res.send('API Working!'));
 }
 
 // Start server
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
+  console.log('Allowed Origins:', allowedOrigins.join(', '));
 });
