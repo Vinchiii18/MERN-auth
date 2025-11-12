@@ -19,24 +19,17 @@ const port = process.env.PORT || 4000;
 // Connect to MongoDB
 connectDB();
 
+// Allowed origins for CORS
 const allowedOrigins =
-  process.env.NODE_ENV === "production"
-    ? ["https://mern-auth-fbtb.onrender.com"]
-    : ["http://localhost:5173"];
+  process.env.NODE_ENV === 'production'
+    ? ['https://mern-auth-fbtb.onrender.com'] // Render domain
+    : ['http://localhost:5173'];
 
-// // CORS
-// if (process.env.NODE_ENV === 'production') {
-//     console.log('Production mode: CORS disabled (React is served by Express)');
-// } else {
-//     console.log('Development mode: CORS enabled for localhost:5173');
-//     app.use(cors({ origin: allowedOrigins, credentials: true }));
-// }
-
-// Always enable CORS
+// Always enable CORS with credentials
 app.use(
   cors({
     origin: allowedOrigins,
-    credentials: true,
+    credentials: true, // important for cookies
   })
 );
 
@@ -48,21 +41,25 @@ app.use(cookieParser());
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 
-// Serve React Frontend in Production
+// Serve React frontend in production
 if (process.env.NODE_ENV === 'production') {
-  console.log("Production mode: CORS disabled (React is served by Express)");
+  console.log('Production mode: serving React from Express');
   app.use(express.static(path.join(__dirname, '../client/dist')));
 
-  // Catch-all route for React using regex
-  app.get(/^\/(?!api).*$/, (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+  // Catch-all route: send React app for any non-API request
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api')) {
+      res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+    } else {
+      res.status(404).json({ message: 'API route not found' });
+    }
   });
 } else {
-  // Local dev: API check
+  // Development: simple API check
   app.get('/', (req, res) => res.send('API Working!'));
 }
 
 // Start server
 app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+  console.log(`Server running on port ${port}`);
 });
