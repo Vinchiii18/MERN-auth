@@ -24,13 +24,21 @@ const allowedOrigins =
     ? ["https://mern-auth-fbtb.onrender.com"]
     : ["http://localhost:5173"];
 
-// CORS
-if (process.env.NODE_ENV === 'production') {
-    console.log('Production mode: CORS disabled (React is served by Express)');
-} else {
-    console.log('Development mode: CORS enabled for localhost:5173');
-    app.use(cors({ origin: allowedOrigins, credentials: true }));
-}
+// // CORS
+// if (process.env.NODE_ENV === 'production') {
+//     console.log('Production mode: CORS disabled (React is served by Express)');
+// } else {
+//     console.log('Development mode: CORS enabled for localhost:5173');
+//     app.use(cors({ origin: allowedOrigins, credentials: true }));
+// }
+
+// Always enable CORS
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
 
 // Middleware
 app.use(express.json());
