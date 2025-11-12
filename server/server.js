@@ -37,15 +37,13 @@ app.use('/api/user', userRouter);
 
 // Serve React Frontend (Production)
 if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, '../client/dist')));
-
-    // Serve React app for any route not handled by API
-    app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, '../client/dist/index.html'));
-    });
+  app.use(express.static(path.join(__dirname, '../client/dist')));
+  
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+  });
 } else {
-    // Local dev API check
-    app.get('/', (req, res) => res.send('API Working!'));
+  app.get('/', (req, res) => res.send('API Working!'));
 }
 
 // Start server
