@@ -1,0 +1,17 @@
+create folders for frontend and backend
+
+start usually with backend
+create server.js file
+
+run command
+- npm init (will create simple package.json)
+- npm i express cors dotenv nodemon jsonwebtoken mongoose bcryptjs nodemailer cookie-parser 	
+	express - to create app
+	cors - that will allow us to connect backend to frontend
+	dotenv - for storing envi variables
+	nodemon - helps us restart backend whenever changes are made to code file
+	jsonwebtoken - used to create token for authentication
+	mongoose - helps us to connect to MongoDB
+	bcryptjs - for encrypting password and storing it to DB
+	nodemailer - helps us in sending emails
+	cookie-parser - for sending cookie to API response
