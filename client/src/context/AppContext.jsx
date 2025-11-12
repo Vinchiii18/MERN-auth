@@ -7,14 +7,16 @@ export const AppContent = createContext();
 export const AppContextProvider = ({ children }) => {
   axios.defaults.withCredentials = true;
 
-  const backendURL = import.meta.env.VITE_BACKEND_URL;
+  // Dynamic backend URL
+  const backendURL = import.meta.env.VITE_BACKEND_URL || window.location.origin;
+
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState(null);
 
   // Check if user is authenticated
   const getAuthState = async (fetchUserData = true) => {
     try {
-      const { data } = await axios.get(backendURL + "/api/auth/is-auth");
+      const { data } = await axios.get(`${backendURL}/api/auth/is-auth`);
 
       if (data.success) {
         setIsLoggedIn(true);
@@ -37,7 +39,7 @@ export const AppContextProvider = ({ children }) => {
   // Fetch user data
   const getUserData = async () => {
     try {
-      const { data } = await axios.get(backendURL + "/api/user/data");
+      const { data } = await axios.get(`${backendURL}/api/user/data`);
       if (data.success) {
         setUserData(data.userData);
       } else {
