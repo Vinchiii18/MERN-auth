@@ -19,8 +19,14 @@ const port = process.env.PORT || 4000;
 // Connect to MongoDB
 connectDB();
 
+// Detect production environment (Render sets process.env.RENDER)
+const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
+
 // CORS
-const allowedOrigins = ['http://localhost:5173'];
+const allowedOrigins = isProduction
+  ? ['https://mern-auth-fbtb.onrender.com'] // replace with your Render domain if it changes
+  : ['http://localhost:5173'];
+
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 
 // Middleware
@@ -31,14 +37,16 @@ app.use(cookieParser());
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 
-// Serve React build folder in production
-if (process.env.NODE_ENV === 'production') {
+// Serve React Frontend (Production)
+if (isProduction) {
   app.use(express.static(path.join(__dirname, '../client/dist')));
 
+  // Serve React index.html for all unknown routes
   app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../client/dist/index.html'));
   });
 } else {
+  // Local dev: API check
   app.get('/', (req, res) => res.send('API Working!'));
 }
 
