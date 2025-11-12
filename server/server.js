@@ -46,17 +46,14 @@ if (process.env.NODE_ENV === 'production') {
   console.log('Production mode: serving React from Express');
   app.use(express.static(path.join(__dirname, '../client/dist')));
 
-  // Catch-all route: send React app for any non-API request
-  app.get('*', (req, res) => {
+  // Catch-all route: serve React app for non-API routes
+  app.use((req, res, next) => {
     if (!req.path.startsWith('/api')) {
       res.sendFile(path.join(__dirname, '../client/dist/index.html'));
     } else {
-      res.status(404).json({ message: 'API route not found' });
+      next(); // Let API routes handle the request
     }
   });
-} else {
-  // Development: simple API check
-  app.get('/', (req, res) => res.send('API Working!'));
 }
 
 // Start server
