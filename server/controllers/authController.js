@@ -32,12 +32,18 @@ export const register = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    await transporter.sendMail({
-      from: process.env.SENDER_EMAIL,
-      to: email,
-      subject: "Welcome to MERN Auth App",
-      text: `Hello ${name},\n\nWelcome! Your account has been created with email: ${email}`,
-    });
+    // Send Welcome Email
+    try {
+      await transporter.sendMail({
+        from: process.env.SENDER_EMAIL,
+        to: email,
+        subject: "Welcome to MERN Auth App",
+        text: `Hello ${name},\n\nWelcome! Your account has been created with email: ${email}`,
+      });
+      console.log(`Welcome email sent to ${email}`);
+    } catch (err) {
+      console.error("Failed to send welcome email:", err.message);
+    }
 
     res.json({ success: true, message: "User Registered Successfully" });
   } catch (error) {
@@ -88,7 +94,7 @@ export const logout = async (req, res) => {
   }
 };
 
-// Send Password Reset OTP (public route)
+// Send Password Reset OTP
 export const sendResetOtp = async (req, res) => {
   const { email } = req.body;
   if (!email) return res.json({ success: false, message: "Email is required" });
@@ -102,13 +108,18 @@ export const sendResetOtp = async (req, res) => {
     user.resetOtpExpireAt = Date.now() + 15 * 60 * 1000; // 15 mins
     await user.save();
 
-    await transporter.sendMail({
-      from: process.env.SENDER_EMAIL,
-      to: email,
-      subject: "Password Reset OTP",
-      // text: `Hello ${user.name},\n\nYour OTP is: ${otp}\nValid for 15 minutes.`,
-      html: PASSWORD_RESET_TEMPLATE.replace("{{otp}}", otp).replace("{{email}}", user.email)
-    });
+    // Send OTP email
+    try {
+      await transporter.sendMail({
+        from: process.env.SENDER_EMAIL,
+        to: email,
+        subject: "Password Reset OTP",
+        html: PASSWORD_RESET_TEMPLATE.replace("{{otp}}", otp).replace("{{email}}", user.email),
+      });
+      console.log(`Password reset OTP sent to ${email}`);
+    } catch (err) {
+      console.error("Failed to send password reset OTP:", err.message);
+    }
 
     res.json({ success: true, message: "Password Reset OTP sent to email" });
   } catch (error) {
@@ -116,7 +127,7 @@ export const sendResetOtp = async (req, res) => {
   }
 };
 
-// Reset Password (public route)
+// Reset Password
 export const resetPassword = async (req, res) => {
   const { email, otp, newPassword } = req.body;
   if (!email || !otp || !newPassword)
@@ -143,9 +154,7 @@ export const resetPassword = async (req, res) => {
   }
 };
 
-// -------------------- Protected Routes -------------------- //
-
-// Send Verification OTP (requires token)
+// Send Verification OTP
 export const sendVerifyOtp = async (req, res) => {
   try {
     const user = await userModel.findById(req.user.id);
@@ -158,13 +167,17 @@ export const sendVerifyOtp = async (req, res) => {
     user.verifyOtpExpireAt = Date.now() + 24 * 60 * 60 * 1000; // 1 day
     await user.save();
 
-    await transporter.sendMail({
-      from: process.env.SENDER_EMAIL,
-      to: user.email,
-      subject: "Account Verification OTP",
-      // text: `Hello ${user.name},\n\nYour OTP is: ${otp}\nValid for 24 hours.`,
-      html: EMAIL_VERIFY_TEMPLATE.replace("{{otp}}", otp).replace("{{email}}", user.email)
-    });
+    try {
+      await transporter.sendMail({
+        from: process.env.SENDER_EMAIL,
+        to: user.email,
+        subject: "Account Verification OTP",
+        html: EMAIL_VERIFY_TEMPLATE.replace("{{otp}}", otp).replace("{{email}}", user.email),
+      });
+      console.log(`Verification OTP sent to ${user.email}`);
+    } catch (err) {
+      console.error("Failed to send verification OTP:", err.message);
+    }
 
     res.json({ success: true, message: "Verification OTP sent to email" });
   } catch (error) {
@@ -172,7 +185,7 @@ export const sendVerifyOtp = async (req, res) => {
   }
 };
 
-// Verify Email (requires token)
+// Verify Email
 export const verifyEmail = async (req, res) => {
   try {
     const { otp } = req.body;
@@ -198,7 +211,7 @@ export const verifyEmail = async (req, res) => {
   }
 };
 
-// Check Authenticated User (requires token)
+// Check Authenticated User
 export const isAuthenticated = async (req, res) => {
   res.json({ success: true, message: "User is Authenticated" });
 };
@@ -206,26 +219,21 @@ export const isAuthenticated = async (req, res) => {
 // Verify Reset OTP
 export const verifyResetOtp = async (req, res) => {
   const { email, otp } = req.body;
-
-  if (!email || !otp) {
+  if (!email || !otp)
     return res.json({ success: false, message: "Email and OTP are required" });
-  }
 
   try {
     const user = await userModel.findOne({ email });
     if (!user) return res.json({ success: false, message: "User does not exist" });
 
-    if (!user.resetOtp || user.resetOtp !== otp) {
+    if (!user.resetOtp || user.resetOtp !== otp)
       return res.json({ success: false, message: "Invalid OTP" });
-    }
 
-    if (user.resetOtpExpireAt < Date.now()) {
+    if (user.resetOtpExpireAt < Date.now())
       return res.json({ success: false, message: "OTP Expired" });
-    }
 
     res.json({ success: true, message: "OTP verified" });
   } catch (error) {
     res.json({ success: false, message: error.message });
   }
 };
-
