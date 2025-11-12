@@ -20,17 +20,17 @@ const port = process.env.PORT || 4000;
 // Connect to MongoDB
 connectDB();
 
-// Determine allowed origins dynamically
+// CORS
 const allowedOrigins = [
-  'http://localhost:5173',          // local dev
-  process.env.RENDER_EXTERNAL_URL    // Render assigned domain (auto)
-].filter(Boolean); // remove undefined if not on Render
+  'http://localhost:5173',        // local dev
+  process.env.RENDER_EXTERNAL_URL  // Render domain automatically
+].filter(Boolean);
 
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 
-// API Routes
+// API routes
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 
@@ -39,12 +39,12 @@ const clientDistPath = path.join(__dirname, '../client/dist');
 if (fs.existsSync(clientDistPath)) {
   app.use(express.static(clientDistPath));
 
-  // Catch all non-API routes and send React index.html
-  app.all('*', (req, res) => {
+  // Catch-all route for React (exclude /api paths)
+  app.get(/^\/(?!api).*/, (req, res) => {
     res.sendFile(path.join(clientDistPath, 'index.html'));
   });
 } else {
-  // Local dev fallback if dist not built
+  // Dev fallback
   app.get('/', (req, res) => res.send('API Working!'));
 }
 
