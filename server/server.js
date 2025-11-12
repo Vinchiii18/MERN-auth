@@ -40,8 +40,8 @@ if (process.env.NODE_ENV === 'production') {
   console.log("Production mode: CORS disabled (React is served by Express)");
   app.use(express.static(path.join(__dirname, '../client/dist')));
 
-  // Catch-all route for React
-  app.all('*', (req, res) => {
+  // Catch-all route for React using regex
+  app.get(/^\/(?!api).*$/, (req, res) => {
     res.sendFile(path.join(__dirname, '../client/dist/index.html'));
   });
 } else {
