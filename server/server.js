@@ -14,14 +14,18 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const port = process.env.PORT || 4000;
 
 // Connect to MongoDB
 connectDB();
 
 // CORS
-const allowedOrigins = ['http://localhost:5173']; // local dev only
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+if (process.env.NODE_ENV === 'production') {
+    console.log('Production mode: CORS disabled (React is served by Express)');
+} else {
+    console.log('Development mode: CORS enabled for localhost:5173');
+    app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+}
 
 // Middleware
 app.use(express.json());
@@ -31,22 +35,20 @@ app.use(cookieParser());
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 
-// Serve React Frontend in Production
+// Serve React Frontend (Production)
 if (process.env.NODE_ENV === 'production') {
-  // Make sure this path matches your built React app
-  const clientDistPath = path.join(__dirname, '../client/dist');
-  app.use(express.static(clientDistPath));
+    app.use(express.static(path.join(__dirname, '../client/dist')));
 
-  // Any route not starting with /api serves React
-  app.get(/^\/(?!api).*/, (req, res) => {
-    res.sendFile(path.join(clientDistPath, 'index.html'));
-  });
+    // Serve React app for any route not handled by API
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+    });
 } else {
-  // Local dev: simple API check
-  app.get('/', (req, res) => res.send('API Working!'));
+    // Local dev API check
+    app.get('/', (req, res) => res.send('API Working!'));
 }
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
 });
