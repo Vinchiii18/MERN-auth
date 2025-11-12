@@ -31,7 +31,7 @@ app.use(cookieParser());
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 
-// Serve React Frontend (Production)
+// Serve React build folder in production
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../client/dist')));
 
@@ -39,7 +39,6 @@ if (process.env.NODE_ENV === 'production') {
     res.sendFile(path.join(__dirname, '../client/dist/index.html'));
   });
 } else {
-  // Simple API root check for development
   app.get('/', (req, res) => res.send('API Working!'));
 }
 
