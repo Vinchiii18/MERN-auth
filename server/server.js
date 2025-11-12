@@ -35,14 +35,17 @@ app.use(cookieParser());
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 
-// Serve React Frontend (Production)
+// Serve React Frontend in Production
 if (process.env.NODE_ENV === 'production') {
+  console.log("Production mode: CORS disabled (React is served by Express)");
   app.use(express.static(path.join(__dirname, '../client/dist')));
-  
-  app.get('*', (req, res) => {
+
+  // Catch-all route for React
+  app.all('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../client/dist/index.html'));
   });
 } else {
+  // Local dev: API check
   app.get('/', (req, res) => res.send('API Working!'));
 }
 
